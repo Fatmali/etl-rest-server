@@ -43,7 +43,10 @@ import * as starting_art_base_age_green from './json-reports/starting-art-base-a
 import * as starting_art_disaggregation_age_green from './json-reports/starting-art-disaggregation-age-green.json';
 import * as starting_art_disaggregation_age_only_green from './json-reports/starting-art-disaggregation-age-only-green.json';
 
-export class BaseMysqlReport {
+import * as breast_cancer_summary_dataset_aggregate from './json-reports/breast-cancer-summary-dataset-aggregate.json';
+import * as breast_cancer_summary_dataset_base from './json-reports/breast-cancer-summary-dataset-base.json';
+
+export class BaseMysqlReport{
     constructor(reportName, params) {
         this.reportName = reportName;
         this.params = params;
@@ -59,11 +62,11 @@ export class BaseMysqlReport {
             that.fetchReportSchema(that.reportName)
                 .then((reportSchemas) => {
                     that.reportSchemas = reportSchemas;
-
+                    console.log(JSON.stringify(reportSchemas, "REPORT SCHEMAS"))
                     // generate query
                     that.generateReportQuery(that.reportSchemas, that.params)
                         .then((sqlQuery) => {
-
+                            
                             // allow user to use 'null' as parameter values
                             sqlQuery = sqlQuery.replace(/\'null\'/g, "null");
                             that.reportQuery = sqlQuery;
@@ -221,6 +224,13 @@ export class BaseMysqlReport {
                         StartingARTSetBaseAgeGreen: starting_art_base_age_green
                     });
                     break;
+                case 'breastCancerSummaryDataSetAggregate':
+                    resolve({
+                        main: breast_cancer_summary_dataset_aggregate,
+                        breastCancerSummaryDataSetBase: breast_cancer_summary_dataset_base
+                    });
+                    break;
+
                 default:
                     reject('Unknown report ', reportName);
                     break;

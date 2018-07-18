@@ -1,0 +1,153 @@
+{
+    "name": "breastCancerSummaryDataSetBase",
+    "version": "1.0",
+    "tag": "breast_cancer_summary_dataset_base",
+    "uses": [],
+    "sources": [
+        {
+            "table": "test.flat_breast_cancer_summary",
+            "alias": "fbcs"
+        },
+        {
+            "table": "amrs.person_name",
+            "alias": "person_name",
+            "join": {
+                "type": "inner",
+                "joinCondition": "fbcs.person_id = person_name.person_id and (person_name.voided is null || person_name.voided = 0)"
+                
+            }
+        },
+        {
+            "table": "amrs.person_identifier",
+            "alias": "id",
+            "join": {
+                "type": "inner",
+                "joinCondition": "fbcs.person_id = id.patient_id and (id.voided is null || id.voided = 0)"
+                
+            }
+
+        },
+        {
+            "table": "amrs.location",
+            "alias": "l",
+            "join": {
+                "type": "inner",
+                "joinCondition": "l.location_id = fbcs.location_id"
+                
+            }
+        },
+        {
+            "table": "amrs.person_attribute",
+            "alias": "p",
+            "joinCondition": "fbcs.person_id = p.person_id and (p.voided is null || p.voided = 0 and (p.person_attribute_type_id = 10))"
+        }
+    ],
+    "columns": [
+        {
+            "type": "simple_column",
+            "alias": "person_id",
+            "column": "fbcs.person_id"
+        },
+        {
+            "type": "derived_column",
+            "alias": "person_name",
+            "expressionType": "simple_expression",
+            "expressionOptions": {
+                "expression": "concat(coalesce(person_name.given_name, ''), ' ', coalesce(person_name.middle_name, ''), ' ', coalesce(person_name.family_name, ''))"
+            }
+        },
+        {
+            "type": "simple_column",
+            "alias": "phone_number",
+            "column": "p.value"
+        },
+        {
+            "type": "derived_column",
+            "alias": "identifiers",
+            "expressionType": "simple_expression",
+            "expressionOptions": {
+                "expression": "group_concat(distinct id.identifier separator ', ')"
+            }
+        },
+        {
+            "type": "simple_column",
+            "alias": "gender",
+            "column": "fbcs.gender"
+        },
+        {
+            "type": "simple_column",
+            "alias": "age",
+            "column": "fbcs.age"
+        },
+        {
+            "type": "simple_column",
+            "alias": "location_id",
+            "column": "fbcs.location_id"
+        },
+        {
+            "type": "simple_column",
+            "alias": "location_name",
+            "column": "l.name"
+        },
+        {
+            "type": "simple_column",
+            "alias": "encounter_datetime",
+            "column": "fbcs.encounter_datetime"
+        },
+        {
+            "type": "derived_column",
+            "alias": "normal_breast_screening_findings",
+            "expressionType": "simple_expression",
+            "expressionOptions": {
+            "expression": "if(cur_physical_findings = 0 or cur_physical_findings is null, 1, null)"
+                       }
+        },
+        {
+            "type": "derived_column",
+            "alias": "abnormal_breast_screening_findings",
+            "expressionType": "simple_expression",
+            "expressionOptions": {
+            "expression": "if(cur_physical_findings != 0, 1, null)"
+                       }
+        },
+        
+        {
+            "type": "derived_column",
+            "alias": "referred_to_clinician",
+            "expressionType": "simple_expression",
+            "expressionOptions": {
+            "expression": "if(referred_orderd = 1, 1, null)"
+                       }
+        }
+    ],
+    "filters": {
+        "conditionJoinOperator": "and",
+        "conditions": [
+            {
+                "filterType": "tableColumns",
+                "conditionExpression": "fbcs.encounter_datetime >= ?",
+                "parameterName": "startDate"
+            },
+            {
+                "filterType": "tableColumns",
+                "conditionExpression": "fbcs.encounter_datetime <= ?",
+                "parameterName": "endDate"
+            },
+            {
+                "filterType": "tableColumns",
+                "conditionExpression": "fbcs.encounter_type = 86"
+            },
+            {
+                "filterType": "tableColumns",
+                "conditionExpression": "fbcs.location_id in ?",
+                "parameterName": "locations"
+            }
+        ]
+    },
+    "groupBy": {
+        "groupParam": "groupByParam",
+        "columns": [
+            "person_id"
+        ]
+    }
+}

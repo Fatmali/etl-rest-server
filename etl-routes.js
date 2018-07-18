@@ -78,7 +78,10 @@ import {
 
 import {
     Moh731Report
-} from './app/reporting-framework/hiv/moh-731.report'
+} from './app/reporting-framework/hiv/moh-731.report';
+import {
+    BreastCancerSummaryService
+} from './service/breast-cancer-summary.service';
 
 module.exports = function () {
 
@@ -3563,6 +3566,42 @@ module.exports = function () {
                 notes: 'Returns a list of active patients enrolled',
                 tags: ['api'],
             }
+        },
+        {
+            method: 'GET',
+            path: '/etl/breast-cancer-summary',
+            config: {
+                auth: 'simple',
+                plugins: {
+                     'openmrsLocationAuthorizer': {
+                       locationParameter: [{
+                           type: 'query', //can be in either query or params so you have to specify
+                           name: 'locationUuids' //name of the location parameter
+                       }],
+                    }
+                },
+                handler: function (request, reply) {
+                    request.query.reportName = 'breast-cancer-summary-dataset';
+                    preRequest.resolveLocationIdsToLocationUuids(request,
+                        function () {
+                            let requestParams = Object.assign({}, request.query, request.params);
+                            let reportParams = etlHelpers.getReportParams('breast-cancer-summary-dataset', 
+                            ['startDate', 'endDate', 'locationUuids', 'indicators', 'gender', 'startAge', 'endAge'], 
+                            requestParams);
+                            let service = new BreastCancerSummaryService();
+                            service.getAggregateReport(reportParams).then((result) => {
+                                reply(result);
+                            }).catch((error) => {
+                                reply(error);
+                            });
+                        });
+                    
+                },
+                description: 'Get breast cancer summary details based on location and time filters',
+                notes: 'Returns aggeregates of breast cancer patients',
+                tags: ['api'],
+            }
+
         }
     ];
 
